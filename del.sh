@@ -69,3 +69,6 @@ main() {
     move_to_trash "$file"
   done 
 }
+
+
+main "$@"
