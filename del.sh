@@ -1,11 +1,12 @@
 #!/bin/bash
 
-# init -----------------------------------------
-CONFIG_FILE=".delconfig"
+CONFIG_FILE="$HOME/.delconfig"
 # Load configuration if it exists
 if [ -f "$CONFIG_FILE" ]; then
   source "$CONFIG_FILE"
 fi
+
+mkdir -p $TRASH_DIR # create trash_dir if not exist
 
 
 if [ $# -eq 0 ]; then
@@ -74,8 +75,6 @@ main() {
     esac
     shift  # Move to the next argument $1 <-- $2 (now $1 points to 2nd positional arg)
   done  
-
-  mkdir -p $TRASH_DIR # create trash_dir if not exist
 
   for file in "$@"; do 
     move_to_trash "$file"
