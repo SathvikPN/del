@@ -1,14 +1,12 @@
 #!/bin/bash
 
-DEL_VERSION='0.0.1'
-TRASH_DIR="$HOME/.trash_directory"
-VERBOSE=false
-AUTO_PURGE_DAYS=1
+# init -----------------------------------------
+CONFIG_FILE=".delconfig"
+# Load configuration if it exists
+if [ -f "$CONFIG_FILE" ]; then
+  source "$CONFIG_FILE"
+fi
 
-auto_purge_files() {
-  find "$TRASH_DIR" -type f -mtime +$AUTO_PURGE_DAYS -exec rm {} \;
-  [ "$VERBOSE" == true ] && echo "auto deleted files older than $AUTO_PURGE_DAYS days from $TRASH_DIR"
-}
 
 if [ $# -eq 0 ]; then
   echo "Welcome to 'del'
@@ -67,7 +65,7 @@ main() {
         purge_files
         ;;
       --version)
-        echo "del version 0.0.0"  # Assuming the next argument is the author's name
+        echo "del version ${DEL_VERSION:-0.0.0}"  # Assuming the next argument is the author's name
         ;;
       *)
         echo "Unknown option: $1"
