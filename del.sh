@@ -2,7 +2,8 @@
 
 if [ $# -eq 0 ]; then
   echo "Welcome to 'del'
-  - a trashing utility for your linux bash terminal"
+  - a trashing utility for your linux bash terminal
+  "
   exit 0
 fi
 
@@ -11,13 +12,13 @@ show_help() {
   cat << EOF
 Usage: del [OPTIONS] FILE...
 
-Move FILE(s) or directories to a recycle bin directory.
+Move FILE(s) to a recycle bin directory.
 
 Options:
   -h, --help      Show this help message and exit
   -v, --verbose   Show detailed information of actions performed
+  -p, --purge     Permanently delete files in trash-directory
   --version       Show version information
-  --purge         Permanently delete files in trash-directory ($TRASH_DIR)
 EOF
 }
 
