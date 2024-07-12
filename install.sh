@@ -21,7 +21,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 
 # Set up the cron job for automatic purging
-(crontab -l 2>/dev/null; echo "0 20 */$AUTO_PURGE_DAYS * * $INSTALL_DIR/purge") | crontab -
+(crontab -l 2>/dev/null; echo "0 20 * * * $INSTALL_DIR/purge") | crontab -
 
 
 # Clean up

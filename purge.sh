@@ -1,36 +1,33 @@
 #!/bin/bash
 
-CONFIG_FILE=".delconfig"
-# Load configuration if it exists
-if [ -f "$CONFIG_FILE" ]; then
-  source "$CONFIG_FILE"
-fi
+TRASH_DIR="$HOME/.trash_directory"
+AUTO_PURGE_DAYS=7
+LAST_RUN_FILE="$HOME/.last_purge_date"
 
-auto_purge_files() {
-    # List files older than AUTO_PURGE_DAYS
-    old_files=$(find "$TRASH_DIR" -type f -mtime +"$AUTO_PURGE_DAYS")
+# Function to check if it's time to purge
+should_purge() {
+  if [[ ! -f "$LAST_RUN_FILE" ]]; then
+    return 0  # No last run date file, so we should purge
+  fi
 
-    if [[ -z "$old_files" ]]; then
-        echo "No files older than $AUTO_PURGE_DAYS days in $TRASH_DIR."
-    else
-        echo "The following files are older than $AUTO_PURGE_DAYS days in $TRASH_DIR:"
-        echo "$old_files"
-        
-        read -p "Do you want to delete these files? (y/n): " choice
-        case "$choice" in
-            y|Y )
-                echo "Deleting files..."
-                find "$TRASH_DIR" -type f -mtime +"$AUTO_PURGE_DAYS" -delete
-                echo "Files deleted."
-                ;;
-            n|N )
-                echo "Skipping deletion."
-                ;;
-            * )
-                echo "Invalid input. Skipping deletion."
-                ;;
-        esac
-    fi
+  last_run=$(cat "$LAST_RUN_FILE")
+  now=$(date +%s)
+  days_diff=$(( (now - last_run) / 86400 ))
+
+  if (( days_diff >= AUTO_PURGE_DAYS )); then
+    return 0  # Time to purge
+  else
+    return 1  # Not yet time to purge
+  fi
 }
 
-auto_purge_files "$@"
+# Function to perform the purge
+purge() {
+  find "$TRASH_DIR" -type f -mtime +"$AUTO_PURGE_DAYS" -delete
+  echo $(date +%s) > "$LAST_RUN_FILE"
+}
+
+# Main script execution
+if should_purge; then
+  purge
+fi
