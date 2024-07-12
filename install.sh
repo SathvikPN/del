@@ -20,6 +20,8 @@ if [ ! -f "$CONFIG_FILE" ]; then
   cp /tmp/del/.delconfig "$CONFIG_FILE"
 fi
 
+# Set up the cron job for automatic purging
+(crontab -l 2>/dev/null; echo "0 0 */$AUTO_PURGE_DAYS * * $INSTALL_DIR/purge") | crontab -
 
 
 # Clean up
