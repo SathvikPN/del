@@ -49,11 +49,9 @@ main() {
         ;; # ends case
       -v | --verbose)
         VERBOSE=true
-        shift
         ;;
       --version)
         echo "del version 0.0.0"  # Assuming the next argument is the author's name
-        shift  # Move past the argument value
         ;;
       *)
         echo "Unknown option: $1"
