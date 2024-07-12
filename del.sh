@@ -11,7 +11,11 @@ if [ $# -eq 0 ]; then
   exit 0
 fi
 
-# Function to display help
+show_version() {
+  echo "del version $DEL_VERSION"
+}
+
+
 show_help() {
   cat << EOF
 Usage: del [OPTIONS] FILE...
