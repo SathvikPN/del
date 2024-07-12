@@ -11,23 +11,22 @@ if [ $# -eq 0 ]; then
   exit 0
 fi
 
-show_version() {
-  echo "del version $DEL_VERSION"
-}
-
-
 show_help() {
   cat << EOF
-Usage: del [OPTIONS] FILE...
+  Usage: del [OPTIONS] FILE...
 
-Move FILE(s) to a recycle bin directory.
+  Move FILE(s) to a recycle bin directory.
 
-Options:
-  -h, --help      Show this help message and exit
-  -v, --verbose   Show detailed information of actions performed
-  -p, --purge     Permanently delete files in trash-directory
-  --version       Show version information
+  Options:
+    -h, --help      Show this help message and exit
+    -v, --verbose   Show detailed information of actions performed
+    -p, --purge     Permanently delete files in trash-directory
+    --version       Show version information
 EOF
+}
+
+show_version() {
+  echo "del version $DEL_VERSION"
 }
 
 move_to_trash() {
@@ -41,6 +40,10 @@ move_to_trash() {
   fi
 }
 
+purge_files() {
+  rm -rf $TRASH_DIR/*
+  [ "$VERBOSE" == true ] && echo "Permanently deleted files from $TRASH_DIR"
+}
 
 main() {
   # parse command-line options -------------------------------------------------------
@@ -53,6 +56,9 @@ main() {
         ;; # ends case
       -v | --verbose)
         VERBOSE=true
+        ;;
+      -p | --purge)
+        purge_files
         ;;
       --version)
         echo "del version 0.0.0"  # Assuming the next argument is the author's name
@@ -71,6 +77,5 @@ main() {
     move_to_trash "$file"
   done 
 }
-
 
 main "$@"
