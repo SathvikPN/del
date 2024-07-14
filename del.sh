@@ -1,84 +1,161 @@
 #!/bin/bash
 
-CONFIG_FILE="$HOME/.delconfig"
-# Load configuration if it exists
-if [ -f "$CONFIG_FILE" ]; then
-  source "$CONFIG_FILE"
-fi
+# metadata
+VERSION=1.0.0
+AUTHOR=sathvikpn
+# Configuration file
+CONFIG_FILE="${HOME}/.delconfig"
 
-mkdir -p $TRASH_DIR # create trash_dir if not exist
+# Default values
+DEFAULT_TRASH_DIR="${HOME}/.local/share/Trash/files"
+DEFAULT_AUTO_PURGE_DAYS=30
+TRASH_DIR="$DEFAULT_TRASH_DIR"
+AUTO_PURGE_DAYS="$DEFAULT_AUTO_PURGE_DAYS"
+VERBOSE=0
 
+# Cron job identifier
+CRON_JOB_ID="del_cleanup"
 
-if [ $# -eq 0 ]; then
-  echo "Welcome to 'del'
-  - a trashing utility for your linux bash terminal
-  "
-  exit 0
-fi
+# Function to create configuration file with default values
+create_default_config() {
+    cat <<EOF > "$CONFIG_FILE"
+# Path to the trash directory
+TRASH_DIR="${DEFAULT_TRASH_DIR}"
 
-show_help() {
-  cat << EOF
-  Usage: del [OPTIONS] FILE...
-
-  Move FILE(s) to a recycle bin directory.
-
-  Options:
-    -h, --help      Show this help message and exit
-    -v, --verbose   Show detailed information of actions performed
-    -p, --purge     Permanently delete files in trash-directory
-    --version       Show version information
+# Number of days after which files are permanently deleted
+AUTO_PURGE_DAYS=${DEFAULT_AUTO_PURGE_DAYS}
 EOF
 }
 
+# Function to load configuration
+load_config() {
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        create_default_config
+    fi
+    source "$CONFIG_FILE"
+}
+
+# Function to show help
+show_help() {
+    echo "Usage: del [options] [file...]"
+    echo "Options:"
+    echo "  -h, --help      Show this help message"
+    echo "  -v, --version   Show version information"
+    echo "  --config        Edit the configuration file"
+    echo "  --verbose       Show verbose output"
+    echo "  --cleanup       Perform cleanup of old files"
+}
+
+# Function to show version
 show_version() {
-  echo "del version $DEL_VERSION"
+    echo "del version $VERSION"
+    echo "author: $AUTHOR"
 }
 
+# Function to ensure trash directory exists
+ensure_trash_dir() {
+    mkdir -p "$TRASH_DIR"
+}
+
+# Function to move file to trash
 move_to_trash() {
-  local file=$1
-  if [ -e $file ]; then 
-    local dest="$TRASH_DIR/$(basename "$file")_$(date +%s)"
-    mv "$file" "$dest"
-    [ "$VERBOSE" == true ] && echo "trashed $file to $dest"
-  else
-    echo "file not found: $file"
-  fi
+    local src="$1"
+    local filename=$(basename "$src")
+    local dest="${TRASH_DIR}/${filename}"
+    local metadata="${TRASH_DIR}/${filename}.delInfo"
+
+    # Verbose output
+    if [[ $VERBOSE -eq 1 ]]; then
+        echo "Moving $src to $dest"
+    fi
+
+    # Move the file
+    mv "$src" "$dest"
+
+    # Create metadata file
+    echo "deletedFrom: $(realpath "$src")" > "$metadata"
+    echo "deletedOn: $(date '+%Y-%m-%d %H:%M:%S')" >> "$metadata"
 }
 
-purge_files() {
-  rm -rf $TRASH_DIR/*
-  [ "$VERBOSE" == true ] && echo "Permanently deleted files from $TRASH_DIR"
+# Function to cleanup old files
+cleanup_old_files() {
+    find "$TRASH_DIR" -type f -name "*.delInfo" -mtime +"$AUTO_PURGE_DAYS" -print0 | while IFS= read -r -d '' metadata; do
+        local file="${metadata%.delInfo}"
+        rm -f "$file" "$metadata"
+        if [[ $VERBOSE -eq 1 ]]; then
+            echo "deleted file: $file and metadata: $metadata"
+        fi
+    done
 }
 
-main() {
-  # parse command-line options -------------------------------------------------------
-  # =~ bash pattern matching operator, true if $1 matches ^-(string that starts with -)
-  while [[ "$1" =~ ^- ]]; do 
-    case $1 in
-      -h | --help)
+# Function to manage cron job for periodic cleanup
+manage_cron_job() {
+    local cron_cmd="0 0 ${AUTO_PURGE_DAYS} * * /usr/local/bin/del --cleanup # $CRON_JOB_ID"
+    local cron_exists=$(crontab -l 2>/dev/null | grep -F "$CRON_JOB_ID")
+
+    if [[ -z "$cron_exists" ]]; then
+        # Cron job does not exist, create it
+        (crontab -l 2>/dev/null; echo "$cron_cmd") | crontab -
+        echo "Created cron job for periodic cleanup."
+    else
+        # Cron job exists, check if it needs updating
+        local current_purge_days=$(echo "$cron_exists" | grep -oP 'mtime \+\K\d+')
+        if [[ "$current_purge_days" != "$AUTO_PURGE_DAYS" ]]; then
+            # Update the existing cron job
+            crontab -l 2>/dev/null | grep -v "$CRON_JOB_ID" | { cat; echo "$cron_cmd"; } | crontab -
+            echo "Updated cron job for periodic cleanup."
+        fi
+    fi
+}
+
+# Function to edit config file
+edit_config() {
+    ${EDITOR:-vi} "$CONFIG_FILE"
+    # Reload configuration after editing
+    load_config
+    manage_cron_job
+}
+
+# Main script execution
+load_config
+ensure_trash_dir
+
+case "$1" in
+    -h|--help)
         show_help
         exit 0
-        ;; # ends case
-      -v | --verbose)
-        VERBOSE=true
         ;;
-      -p | --purge)
-        purge_files
+    -v|--version)
+        show_version
+        exit 0
         ;;
-      --version)
-        echo "del version ${DEL_VERSION:-0.0.0}"  # Assuming the next argument is the author's name
+    --config)
+        edit_config
+        exit 0
         ;;
-      *)
-        echo "Unknown option: $1"
-        exit 1
+    --verbose)
+        VERBOSE=1
+        shift
         ;;
-    esac
-    shift  # Move to the next argument $1 <-- $2 (now $1 points to 2nd positional arg)
-  done  
+    --cleanup)
+        cleanup_old_files
+        exit 0
+        ;;
+esac
 
-  for file in "$@"; do 
-    move_to_trash "$file"
-  done 
-}
+if [[ $# -eq 0 ]]; then
+    echo "Error: No files specified."
+    show_help
+    exit 1
+fi
 
-main "$@"
+for file in "$@"; do
+    if [[ -e "$file" ]]; then
+        move_to_trash "$file"
+    else
+        echo "Error: File '$file' not found."
+    fi
+done
+
+cleanup_old_files
+manage_cron_job
