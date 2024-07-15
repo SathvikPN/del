@@ -72,6 +72,20 @@ move_to_trash() {
 }
 
 
+# manage cron job for periodic cleanup
+manage_auto_cleanup() {
+    local cron_cmd="0 0 ${AUTO_PURGE_DAYS} * * /usr/local/bin/del --cleanup # $CRON_JOB_ID"
+    local cron_exists=$(crontab -l 2>/dev/null | grep -F "$CRON_JOB_ID")
+
+    if [[ -z "$cron_exists" ]]; then
+        # Cron job does not exist, create it
+        (crontab -l 2>/dev/null; echo "$cron_cmd") | crontab -
+        echo "created cron job for periodic cleanup."
+    else 
+        crontab -l 2>/dev/null | grep -v "$CRON_JOB_ID" | { cat; echo "$cron_cmd"; } | crontab -
+        echo "updated cron job for periodic cleanup."
+    fi
+}
 
 
 
@@ -97,6 +111,7 @@ case "$1" in
         ;;
     --config)
         edit_config
+        manage_auto_cleanup
         exit 0
         ;;
 esac
@@ -114,3 +129,5 @@ for file in "$@"; do
         echo "Error: not found '$file'"
     fi
 done
+
+manage_auto_cleanup
