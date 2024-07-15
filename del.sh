@@ -10,20 +10,25 @@ CRON_JOB_ID="del_cleanup"
 VERBOSE=0
 CONFIG_FILE="${HOME}/.delconfig"
 DEFAULT_TRASH_DIR="${HOME}/.local/share/Trash/files"
-DEFAULT_AUTO_PURGE_DAYS=30
+DEFAULT_AUTO_PURGE_DAY=30
 
 create_default_config() {
 cat <<EOF > "$CONFIG_FILE"
+# day of month [1-30]
+AUTO_PURGE_DAY=${DEFAULT_AUTO_PURGE_DAY}
 TRASH_DIR="${DEFAULT_TRASH_DIR}"
-AUTO_PURGE_DAYS=${DEFAULT_AUTO_PURGE_DAYS}
 EOF
 }
 
 del_init(){
     if [[ ! -f "$CONFIG_FILE" ]]; then
         create_default_config
+        source "$CONFIG_FILE"
+        manage_auto_cleanup
+    else 
+        source "$CONFIG_FILE"
     fi
-    source "$CONFIG_FILE"
+    
     mkdir -p $TRASH_DIR
 }
 
@@ -52,6 +57,7 @@ edit_config() {
     ${EDITOR:-vi} "$CONFIG_FILE"
     # Reload configuration after editing
     source "$CONFIG_FILE"
+    manage_auto_cleanup
 }
 
 move_to_trash() {
@@ -76,7 +82,7 @@ move_to_trash() {
 
 # cleanup old files
 cleanup_old_files() {
-    find "$TRASH_DIR" -type f -name "*.delInfo" -mtime +"$AUTO_PURGE_DAYS" -print0 | while IFS= read -r -d '' metadata; do
+    find "$TRASH_DIR" -type f -name "*.delInfo" -mtime +"$AUTO_PURGE_DAY" -print0 | while IFS= read -r -d '' metadata; do
         local file="${metadata%.delInfo}"
         rm -f "$file" "$metadata"
         if [[ $VERBOSE -eq 1 ]]; then
@@ -86,19 +92,25 @@ cleanup_old_files() {
 }
 
 
-# manage cron job for periodic cleanup
+# manage cron job for scheduled cleanup
 manage_auto_cleanup() {
-    local cron_cmd="0 0 ${AUTO_PURGE_DAYS} * * /usr/local/bin/del --cleanup # $CRON_JOB_ID"
+    local cron_cmd="0 0 ${AUTO_PURGE_DAY} * * /usr/local/bin/del --cleanup # $CRON_JOB_ID"
     local cron_exists=$(crontab -l 2>/dev/null | grep -F "$CRON_JOB_ID")
 
     if [[ -z "$cron_exists" ]]; then
         # Cron job does not exist, create it
         (crontab -l 2>/dev/null; echo "$cron_cmd") | crontab -
     else 
-        crontab -l 2>/dev/null | grep -v "$CRON_JOB_ID" | { cat; echo "$cron_cmd"; } | crontab -
+        crontab -l 2>/dev/null | grep -v "$CRON_JOB_ID" | { cat; echo "$cron_cmd"; } | crontab - 2>/dev/null
     fi
 
-    echo "del: set auto delete interval [$AUTO_PURGE_DAYS days]"
+    if [ $? -eq 0 ]; then
+        echo "del: schedule auto delete [day $AUTO_PURGE_DAY of every month]"
+    else
+        echo "del: please set day of a month [1-30]"
+    fi
+
+    
 }
 
 del_reset() {
@@ -129,7 +141,6 @@ case "$1" in
         ;;
     --config)
         edit_config
-        manage_auto_cleanup
         exit 0
         ;;
     --reset)
