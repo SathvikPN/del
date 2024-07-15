@@ -37,6 +37,7 @@ Options:
         --version   Show version information
         --config    Update configuration file
         --reset     Reset config file to defaults
+        --cleanup   Clear files older than configured days
 EOF
 }
 
@@ -71,6 +72,17 @@ move_to_trash() {
     echo "deletedFrom: $(realpath "$src")" > "$metadata"
     echo "deletedOn: $(date '+%Y-%m-%d %H:%M:%S')" >> "$metadata"
     echo "deletedBy: $USER" >> "$metadata"
+}
+
+# cleanup old files
+cleanup_old_files() {
+    find "$TRASH_DIR" -type f -name "*.delInfo" -mtime +"$AUTO_PURGE_DAYS" -print0 | while IFS= read -r -d '' metadata; do
+        local file="${metadata%.delInfo}"
+        rm -f "$file" "$metadata"
+        if [[ $VERBOSE -eq 1 ]]; then
+            echo "del: permanently deleted '$file' and metadata '$metadata'"
+        fi
+    done
 }
 
 
@@ -122,6 +134,10 @@ case "$1" in
         ;;
     --reset)
         del_reset
+        exit 0
+        ;;
+    --cleanup)
+        cleanup_old_files
         exit 0
         ;;
 esac
