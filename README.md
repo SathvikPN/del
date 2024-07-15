@@ -14,3 +14,17 @@ Download & Install del from source repo
 ```bash
 curl -fsSL https://raw.githubusercontent.com/SathvikPN/del/main/del_install.sh | sudo bash
 ```
+
+# Usage
+```bash
+sathvikpn:~/workspace/del$ ./del.sh --help
+Usage: del [OPTIONS] FILE...
+
+Options:
+    -h, --help      Show this help message and exit
+    -v, --verbose   Show the actions performed
+        --version   Show version information
+        --config    Update configuration file
+        --reset     Reset config file to defaults
+        --cleanup   Clear files older than configured days
+```
