@@ -6,6 +6,7 @@ SOURCE='https://github.com/SathvikPN/del'
 
 # default configs 
 VERBOSE=0
+RESET=0
 CONFIG_FILE="${HOME}/.delconfig"
 DEFAULT_TRASH_DIR="${HOME}/.local/share/Trash/files"
 DEFAULT_AUTO_PURGE_DAYS=30
@@ -35,6 +36,7 @@ Options:
     -v, --verbose   Show the actions performed
         --version   Show version information
         --config    Update configuration file
+        --reset     Reset config file to defaults
 EOF
 }
 
@@ -80,14 +82,18 @@ manage_auto_cleanup() {
     if [[ -z "$cron_exists" ]]; then
         # Cron job does not exist, create it
         (crontab -l 2>/dev/null; echo "$cron_cmd") | crontab -
-        echo "created cron job for periodic cleanup."
     else 
         crontab -l 2>/dev/null | grep -v "$CRON_JOB_ID" | { cat; echo "$cron_cmd"; } | crontab -
-        echo "updated cron job for periodic cleanup."
     fi
+
+    echo "del: set auto delete interval [$AUTO_PURGE_DAYS days]"
 }
 
-
+del_reset() {
+    rm -f $CONFIG_FILE
+    del_init
+    echo "del: reset to default completed"
+}
 
 
 
@@ -112,6 +118,10 @@ case "$1" in
     --config)
         edit_config
         manage_auto_cleanup
+        exit 0
+        ;;
+    --reset)
+        del_reset
         exit 0
         ;;
 esac
