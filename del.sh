@@ -10,13 +10,19 @@ CRON_JOB_ID="del_cleanup"
 VERBOSE=0
 CONFIG_FILE="${HOME}/.delconfig"
 DEFAULT_TRASH_DIR="${HOME}/.local/share/Trash/files"
-DEFAULT_AUTO_PURGE_DAY=30
+DEFAULT_AUTO_PURGE_DAY=1
+DEFAULT_KEEP_DAYS=7
 
 create_default_config() {
 cat <<EOF > "$CONFIG_FILE"
+TRASH_DIR="${DEFAULT_TRASH_DIR}"
+
+# keep deleted files in TRASH_DIR for these days
+KEEP_DAYS=${DEFAULT_KEEP_DAYS}
+
 # day of month [1-30]
 AUTO_PURGE_DAY=${DEFAULT_AUTO_PURGE_DAY}
-TRASH_DIR="${DEFAULT_TRASH_DIR}"
+
 EOF
 }
 
@@ -28,7 +34,7 @@ del_init(){
     else 
         source "$CONFIG_FILE"
     fi
-    
+
     mkdir -p $TRASH_DIR
 }
 
@@ -58,6 +64,7 @@ edit_config() {
     # Reload configuration after editing
     source "$CONFIG_FILE"
     manage_auto_cleanup
+    echo "del: set delete files older than [$KEEP_DAYS days]"
 }
 
 move_to_trash() {
@@ -82,12 +89,10 @@ move_to_trash() {
 
 # cleanup old files
 cleanup_old_files() {
-    find "$TRASH_DIR" -type f -name "*.delInfo" -mtime +"$AUTO_PURGE_DAY" -print0 | while IFS= read -r -d '' metadata; do
+    find "$TRASH_DIR" -type f -name "*.delInfo" -mtime +"$KEEP_DAYS" -print0 | while IFS= read -r -d '' metadata; do
         local file="${metadata%.delInfo}"
         rm -f "$file" "$metadata"
-        if [[ $VERBOSE -eq 1 ]]; then
-            echo "del: permanently deleted '$file' and metadata '$metadata'"
-        fi
+        echo "del: deleted '$file' and metadata '$metadata'"
     done
 }
 
@@ -107,16 +112,15 @@ manage_auto_cleanup() {
     if [ $? -eq 0 ]; then
         echo "del: schedule auto delete [day $AUTO_PURGE_DAY of every month]"
     else
-        echo "del: please set day of a month [1-30]"
+        echo "del: AUTO_PURGE_DAY requires day of a month [1-30]"
+        exit 1
     fi
-
-    
 }
 
 del_reset() {
     rm -f $CONFIG_FILE
     del_init
-    echo "del: reset to default completed"
+    echo "del: set delete files older than [$KEEP_DAYS days]"
 }
 
 
