@@ -2,6 +2,7 @@
 
 VERSION=1.0.0
 AUTHOR=sathvikpn
+SOURCE='https://github.com/SathvikPN/del'
 
 # default configs 
 VERBOSE=0
@@ -39,8 +40,9 @@ EOF
 
 # Function to show version
 show_version() {
-    echo "del version $VERSION"
-    echo "author: $AUTHOR"
+    echo "version: del $VERSION"
+    echo " author: $AUTHOR"
+    echo " source: $SOURCE"
 }
 
 edit_config() {
