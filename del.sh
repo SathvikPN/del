@@ -4,13 +4,13 @@ VERSION=1.0.0
 AUTHOR=sathvikpn
 SOURCE='https://github.com/SathvikPN/del'
 
+CRON_JOB_ID="del_cleanup"
+
 # default configs 
 VERBOSE=0
-RESET=0
 CONFIG_FILE="${HOME}/.delconfig"
 DEFAULT_TRASH_DIR="${HOME}/.local/share/Trash/files"
 DEFAULT_AUTO_PURGE_DAYS=30
-CRON_JOB_ID="del_cleanup"
 
 create_default_config() {
 cat <<EOF > "$CONFIG_FILE"
@@ -155,5 +155,3 @@ for file in "$@"; do
         echo "Error: not found '$file'"
     fi
 done
-
-manage_auto_cleanup
