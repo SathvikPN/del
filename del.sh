@@ -73,13 +73,13 @@ move_to_trash() {
     local dest="${TRASH_DIR}/${filename}"
     local metadata="${TRASH_DIR}/${filename}.delInfo"
 
-    # Verbose output
-    if [[ $VERBOSE -eq 1 ]]; then
-        echo "trashing '$filename' to '$dest'"
-    fi
-
     # Move the file
     mv "$src" "$dest"
+
+    # Verbose output
+    if [[ $VERBOSE -eq 1 ]]; then
+        echo "trashed '$filename' to '$dest'"
+    fi
 
     # Create metadata file
     echo "deletedFrom: $(realpath "$src")" > "$metadata"
