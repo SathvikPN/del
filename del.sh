@@ -49,6 +49,26 @@ edit_config() {
     source "$CONFIG_FILE"
 }
 
+move_to_trash() {
+    local src="$1"
+    local filename=$(basename "$src")
+    local dest="${TRASH_DIR}/${filename}"
+    local metadata="${TRASH_DIR}/${filename}.delInfo"
+
+    # Verbose output
+    if [[ $VERBOSE -eq 1 ]]; then
+        echo "trashing '$filename' to '$dest'"
+    fi
+
+    # Move the file
+    mv "$src" "$dest"
+
+    # Create metadata file
+    echo "deletedFrom: $(realpath "$src")" > "$metadata"
+    echo "deletedOn: $(date '+%Y-%m-%d %H:%M:%S')" >> "$metadata"
+    echo "deletedBy: $USER" >> "$metadata"
+}
+
 
 
 
@@ -84,3 +104,11 @@ if [[ $# -eq 0 ]]; then
     show_help
     exit 1
 fi
+
+for file in "$@"; do
+    if [[ -e "$file" ]]; then
+        move_to_trash "$file"
+    else
+        echo "Error: not found '$file'"
+    fi
+done
