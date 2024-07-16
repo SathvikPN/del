@@ -1,7 +1,7 @@
 <img src="./del_logo.jpeg" height=150rem width=150rem style="border-radius: 50%;">
 
 # del
-A recycle bin utility for your Linux bash terminal.
+A trashing utility for linux bash terminal.
 
 - `del` moves files to a trash can instead of permanently deleting them, allowing you to recover accidentally deleted files from bash terminal. 
 - `del` also includes metadata about deleted files, when, where and by whom it was deleted. 
