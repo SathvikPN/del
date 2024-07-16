@@ -16,12 +16,13 @@ DEFAULT_KEEP_DAYS=7
 create_default_config() {
 cat <<EOF > "$CONFIG_FILE"
 TRASH_DIR="${DEFAULT_TRASH_DIR}"
-
-# keep deleted files in TRASH_DIR for these days
 KEEP_DAYS=${DEFAULT_KEEP_DAYS}
-
-# day of month [1-30]
 AUTO_PURGE_DAY=${DEFAULT_AUTO_PURGE_DAY}
+
+# del configuration -----------------------
+# TRASH_DIR       - path to trash directory
+# KEEP_DAYS       - days to keep deleted files in trash
+# AUTO_PURGE_DAY  - scheduled day of month for auto cleanup [1-30]
 
 EOF
 }
