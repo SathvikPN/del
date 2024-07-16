@@ -29,4 +29,8 @@ Options:
         --config    Update configuration file
         --reset     Reset config file to defaults
         --cleanup   Clear files older than configured days
-```a
+```
+
+# Sample
+
+<img src="./del_workflow.png">
