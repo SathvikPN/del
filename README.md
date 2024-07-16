@@ -1,3 +1,5 @@
+<img src="./del_logo.jpeg" height=150rem width=150rem style="border-radius: 50%;">
+
 # del
 A recycle bin utility for your Linux bash terminal.
 
@@ -27,4 +29,4 @@ Options:
         --config    Update configuration file
         --reset     Reset config file to defaults
         --cleanup   Clear files older than configured days
-```
+```a
